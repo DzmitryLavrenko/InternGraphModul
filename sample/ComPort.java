@@ -11,6 +11,8 @@ import static java.lang.Thread.*;
  */
 public class ComPort {
 
+    //проверки на корректность записей
+    CheckStatement Check = new CheckStatement();
 
     //  сериал порт
     SerialPort serialPort;
@@ -84,7 +86,13 @@ public class ComPort {
             System.out.println("Валится все таки тут 3 " + ex);
         }
 
-        return dateFromADC;
+        if(Check.isDigit(dateFromADC))
+        {
+            return dateFromADC;
+        } else {
+            return "0";
+        }
+
     }
 
 

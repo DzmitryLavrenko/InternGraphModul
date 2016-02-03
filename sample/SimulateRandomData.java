@@ -3,7 +3,13 @@ package sample;
 /**
  * Created by Dmitry on 01.02.2016.
  */
+
+
+
 public class SimulateRandomData {
+
+    //проверки на корректность записей
+    CheckStatement Check = new CheckStatement();
 
    //  генерировать строку
    public String getRandomData()
@@ -13,7 +19,12 @@ public class SimulateRandomData {
        String strData = String.valueOf(dataint);
        System.out.println(strData);
 
-    return strData;
+       if(Check.isDigit(strData))
+       {
+           return strData;
+       } else {
+           return "0";
+       }
    }
 
 }

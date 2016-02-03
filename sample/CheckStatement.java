@@ -15,8 +15,12 @@ public class CheckStatement {
         } catch (Exception e) {
             return false;
         }
-        return true;
-
+        if(text.isEmpty())
+        {
+            return false;
+        }else {
+            return true;
+        }
     }
 
     public boolean isCOM(String Com)

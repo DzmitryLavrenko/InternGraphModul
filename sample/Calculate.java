@@ -6,7 +6,7 @@ package sample;
 
 public class Calculate {
 
-
+    //public void allow
 
 
 }

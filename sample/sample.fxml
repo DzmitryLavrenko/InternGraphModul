@@ -101,8 +101,8 @@
                   <TextField fx:id="SComPortName" layoutX="169.0" layoutY="27.0" promptText="Название" />
                   <TextField fx:id="SPeriodReqPort" layoutX="345.0" layoutY="27.0" promptText="Частота опроса" />
                   <ToggleButton fx:id="SButtConPort" layoutX="536.0" layoutY="26.0" mnemonicParsing="false" onAction="#connectComPort" prefHeight="25.0" prefWidth="103.0" text="Подключить" />
-                  <TextField layoutX="376.0" layoutY="554.0" prefHeight="25.0" prefWidth="166.0" promptText="Установленное значение" />
-                  <ToggleButton layoutX="52.0" layoutY="555.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="103.0" text="Сохранить" />
+                  <TextField fx:id="SDotAllCalibrData" layoutX="376.0" layoutY="554.0" prefHeight="25.0" prefWidth="166.0" promptText="Установленное значение" />
+                  <ToggleButton fx:id="SButtAllCalibr" layoutX="52.0" layoutY="555.0" mnemonicParsing="false" onAction="#confirmCalibr" prefHeight="25.0" prefWidth="103.0" text="Сохранить" />
                   <Label layoutX="38.0" layoutY="604.0" prefHeight="25.0" prefWidth="683.0" text="Для проведения измерения необходимо провести все необходимые настройки">
                      <font>
                         <Font size="15.0" />

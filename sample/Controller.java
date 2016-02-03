@@ -1,9 +1,13 @@
 package sample;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.util.Duration;
 
 
 import java.util.Date;
@@ -28,7 +32,8 @@ public class Controller {
     //проверки на корректность записей
     CheckStatement Check = new CheckStatement();
 
-    Thread myThready;
+    // таймер для опроса ком порта
+    Timeline timeline;
 
 
     double globalDataToCalibr = 0;
@@ -52,6 +57,7 @@ public class Controller {
     private TextField SComPortName;
     @FXML
     private TextField SPeriodReqPort;
+
 
     // подключение к порту
     @FXML
@@ -88,6 +94,7 @@ public class Controller {
 
         } else {
             Com.closeComPort();
+            timeline.stop();
             isPortConnection = false;
             SComPortName.clear();
             SPeriodReqPort.clear();
@@ -98,36 +105,20 @@ public class Controller {
     public void runComPortThread(int iTimerMS)
     {
         // запуск таймера для принятия данных с АЦП
-        Thread myThready = new Thread(new Runnable()
-        {
-            public void run() //Этот метод будет выполняться в побочном потоке
-            {
-                System.out.println("Запущен параллельный поток!");
-                String dataFromADC = "";
-                while (isPortConnection == true) {
+        System.out.println("Запущен  таймлайн!");
 
-
-                  //  dataFromADC = Com.getDataFromADC();
-                    dataFromADC = Rand.getRandomData();
-
-                    if(Check.isDigit(dataFromADC)){
-                        // метод преобразования данных от АЦП
-                        getDataFromADC(dataFromADC);
-                    }
-
-                    try {
-                        Thread.sleep(iTimerMS);
-                    } catch (InterruptedException ex) {
-                        System.out.println("Валится тут все таки " + ex);
-                    }
-
-                }
-                Com.closeComPort();
-            }
-        });
-        myThready.start();	//Запуск потока
+        timeline = new Timeline(new KeyFrame(
+                Duration.millis(iTimerMS),
+                ae -> doSomething()));
+        timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.play();
     }
 
+    public void doSomething()
+    {
+        getDataFromADC(Rand.getRandomData());
+        //  dataFromADC = Com.getDataFromADC();
+    }
 
 
 
@@ -192,31 +183,38 @@ public class Controller {
 
         String rangeFilterStr;
         int rangeFilterInt;
-        String DigitAfterDotStr;
-        int DigitAfterDotInt;
+        String digitAfterDotStr;
+        int digitAfterDotInt;
 
         if(SFButtConFilter.isSelected()){
 
             rangeFilterStr = SFTxtGradeFilter.getText();
-            rangeFilterInt = Integer.valueOf(rangeFilterStr);
-            DigitAfterDotStr = SFTxtRounding.getText();
-            DigitAfterDotInt = Integer.valueOf(DigitAfterDotStr);
-            Filter.initFilter(rangeFilterInt, DigitAfterDotInt);
-            isFilterConnection = true;
+            digitAfterDotStr = SFTxtRounding.getText();
+
+            if(Check.isDigit(rangeFilterStr)&&Check.isDigit(digitAfterDotStr))
+            {
+                rangeFilterInt = Integer.valueOf(rangeFilterStr);
+                digitAfterDotInt = Integer.valueOf(digitAfterDotStr);
+                Filter.initFilter(rangeFilterInt, digitAfterDotInt);
+                isFilterConnection = true;
+            } else {
+                SFTxtRounding.clear();
+                SFTxtGradeFilter.clear();
+                SFTxtFilterCode.clear();
+                isFilterConnection = false;
+                SFButtConFilter.setSelected(false);
+            }
         } else {
             SFTxtRounding.clear();
             SFTxtGradeFilter.clear();
             SFTxtFilterCode.clear();
             isFilterConnection = false;
+            SFButtConFilter.setSelected(false);
         }
-
-
-
     }
 
 
 //--------------------------------------------------------------
-
 
 /*
 *       КАЛИБРОВКА
@@ -239,31 +237,28 @@ public class Controller {
         String SDot1CalibrAnalogTxt;
         String SDot1CalibrDataTxt;
         boolean SDot1AccesToWrite = true;
+        SDot1CalibrAnalogTxt = SDot1CalibrAnalog.getText();
 
-        if(SButt1Calibr.isSelected()){
+        if(SButt1Calibr.isSelected()&&(Check.isDigit(SDot1CalibrAnalogTxt))){
 
-            SDot1CalibrAnalogTxt = SDot1CalibrAnalog.getText();
             SDot1CalibrDataTxt = String.valueOf(globalDataToCalibr);
-
-            if((SDot1CalibrAnalogTxt.isEmpty()) && (SDot1CalibrDataTxt.isEmpty()))
-            {
-                SDot1CalibrComplit = false;
-                SDot1CalibrData.clear();
-                SButt1Calibr.setSelected(false);
-            } else {
                 // метод проверяющий доступность записи
                 if(SDot1AccesToWrite){
                     // метод записывающий калибровку
                     SDot1CalibrData.setText(SDot1CalibrDataTxt);
                     SDot1CalibrComplit = true;
                 } else {
+                    SDot1CalibrAnalog.clear();
+                    SButt1Calibr.setSelected(false);
+                    SDotAllCalibrComplit = false;
                     SDot1CalibrComplit = false;
                     SDot1CalibrData.clear();
-                    SButt1Calibr.setSelected(false);
                 }
-            }
-        } else {
+            } else {
+            SButt1Calibr.setSelected(false);
+            SDotAllCalibrComplit = false;
             SDot1CalibrComplit = false;
+            SDot1CalibrAnalog.clear();
             SDot1CalibrData.clear();
             //  метод очищающий калибровку
         }
@@ -286,31 +281,28 @@ public class Controller {
         String SDot2CalibrAnalogTxt;
         String SDot2CalibrDataTxt;
         boolean SDot2AccesToWrite = true;
+        SDot2CalibrAnalogTxt = SDot2CalibrAnalog.getText();
 
-        if(SButt2Calibr.isSelected()){
+        if(SButt2Calibr.isSelected()&&(Check.isDigit(SDot2CalibrAnalogTxt))){
 
-            SDot2CalibrAnalogTxt = SDot2CalibrAnalog.getText();
             SDot2CalibrDataTxt = String.valueOf(globalDataToCalibr);
-
-            if((SDot2CalibrAnalogTxt.isEmpty()) && (SDot2CalibrDataTxt.isEmpty()))
-            {
+            // метод проверяющий доступность записи
+            if(SDot2AccesToWrite){
+                // метод записывающий калибровку
+                SDot2CalibrData.setText(SDot2CalibrDataTxt);
+                SDot2CalibrComplit = true;
+            } else {
+                SDot2CalibrAnalog.clear();
+                SButt2Calibr.setSelected(false);
+                SDotAllCalibrComplit = false;
                 SDot2CalibrComplit = false;
                 SDot2CalibrData.clear();
-                SButt2Calibr.setSelected(false);
-            } else {
-                // метод проверяющий доступность записи
-                if(SDot2AccesToWrite){
-                    // метод записывающий калибровку
-                    SDot2CalibrData.setText(SDot2CalibrDataTxt);
-                    SDot2CalibrComplit = true;
-                } else {
-                    SDot2CalibrComplit = false;
-                    SDot2CalibrData.clear();
-                    SButt2Calibr.setSelected(false);
-                }
             }
         } else {
+            SButt2Calibr.setSelected(false);
+            SDotAllCalibrComplit = false;
             SDot2CalibrComplit = false;
+            SDot2CalibrAnalog.clear();
             SDot2CalibrData.clear();
             //  метод очищающий калибровку
         }
@@ -333,31 +325,28 @@ public class Controller {
         String SDot3CalibrAnalogTxt;
         String SDot3CalibrDataTxt;
         boolean SDot3AccesToWrite = true;
+        SDot3CalibrAnalogTxt = SDot3CalibrAnalog.getText();
 
-        if(SButt3Calibr.isSelected()){
+        if(SButt3Calibr.isSelected()&&(Check.isDigit(SDot3CalibrAnalogTxt))){
 
-            SDot3CalibrAnalogTxt = SDot3CalibrAnalog.getText();
             SDot3CalibrDataTxt = String.valueOf(globalDataToCalibr);
-
-            if((SDot3CalibrAnalogTxt.isEmpty()) && (SDot3CalibrDataTxt.isEmpty()))
-            {
+            // метод проверяющий доступность записи
+            if(SDot3AccesToWrite){
+                // метод записывающий калибровку
+                SDot3CalibrData.setText(SDot3CalibrDataTxt);
+                SDot3CalibrComplit = true;
+            } else {
+                SDot3CalibrAnalog.clear();
+                SButt3Calibr.setSelected(false);
+                SDotAllCalibrComplit = false;
                 SDot3CalibrComplit = false;
                 SDot3CalibrData.clear();
-                SButt3Calibr.setSelected(false);
-            } else {
-                // метод проверяющий доступность записи
-                if(SDot3AccesToWrite){
-                    // метод записывающий калибровку
-                    SDot3CalibrData.setText(SDot3CalibrDataTxt);
-                    SDot3CalibrComplit = true;
-                } else {
-                    SDot3CalibrComplit = false;
-                    SDot3CalibrData.clear();
-                    SButt3Calibr.setSelected(false);
-                }
             }
         } else {
+            SButt3Calibr.setSelected(false);
+            SDotAllCalibrComplit = false;
             SDot3CalibrComplit = false;
+            SDot3CalibrAnalog.clear();
             SDot3CalibrData.clear();
             //  метод очищающий калибровку
         }
@@ -380,31 +369,28 @@ public class Controller {
         String SDot4CalibrAnalogTxt;
         String SDot4CalibrDataTxt;
         boolean SDot4AccesToWrite = true;
+        SDot4CalibrAnalogTxt = SDot4CalibrAnalog.getText();
 
-        if(SButt4Calibr.isSelected()){
+        if(SButt4Calibr.isSelected()&&(Check.isDigit(SDot4CalibrAnalogTxt))){
 
-            SDot4CalibrAnalogTxt = SDot4CalibrAnalog.getText();
             SDot4CalibrDataTxt = String.valueOf(globalDataToCalibr);
-
-            if((SDot4CalibrAnalogTxt.isEmpty()) && (SDot4CalibrDataTxt.isEmpty()))
-            {
+            // метод проверяющий доступность записи
+            if(SDot4AccesToWrite){
+                // метод записывающий калибровку
+                SDot4CalibrData.setText(SDot4CalibrDataTxt);
+                SDot4CalibrComplit = true;
+            } else {
+                SDot4CalibrAnalog.clear();
+                SButt4Calibr.setSelected(false);
+                SDotAllCalibrComplit = false;
                 SDot4CalibrComplit = false;
                 SDot4CalibrData.clear();
-                SButt4Calibr.setSelected(false);
-            } else {
-                // метод проверяющий доступность записи
-                if(SDot4AccesToWrite){
-                    // метод записывающий калибровку
-                    SDot4CalibrData.setText(SDot4CalibrDataTxt);
-                    SDot4CalibrComplit = true;
-                } else {
-                    SDot4CalibrComplit = false;
-                    SDot4CalibrData.clear();
-                    SButt4Calibr.setSelected(false);
-                }
             }
         } else {
+            SButt4Calibr.setSelected(false);
+            SDotAllCalibrComplit = false;
             SDot4CalibrComplit = false;
+            SDot4CalibrAnalog.clear();
             SDot4CalibrData.clear();
             //  метод очищающий калибровку
         }
@@ -428,31 +414,28 @@ public class Controller {
         String SDot5CalibrAnalogTxt;
         String SDot5CalibrDataTxt;
         boolean SDot5AccesToWrite = true;
+        SDot5CalibrAnalogTxt = SDot5CalibrAnalog.getText();
 
-        if(SButt5Calibr.isSelected()){
+        if(SButt5Calibr.isSelected()&&(Check.isDigit(SDot5CalibrAnalogTxt))){
 
-            SDot5CalibrAnalogTxt = SDot5CalibrAnalog.getText();
             SDot5CalibrDataTxt = String.valueOf(globalDataToCalibr);
-
-            if((SDot5CalibrAnalogTxt.isEmpty()) && (SDot5CalibrDataTxt.isEmpty()))
-            {
+            // метод проверяющий доступность записи
+            if(SDot5AccesToWrite){
+                // метод записывающий калибровку
+                SDot5CalibrData.setText(SDot5CalibrDataTxt);
+                SDot5CalibrComplit = true;
+            } else {
+                SDot5CalibrAnalog.clear();
+                SButt5Calibr.setSelected(false);
+                SDotAllCalibrComplit = false;
                 SDot5CalibrComplit = false;
                 SDot5CalibrData.clear();
-                SButt5Calibr.setSelected(false);
-            } else {
-                // метод проверяющий доступность записи
-                if(SDot5AccesToWrite){
-                    // метод записывающий калибровку
-                    SDot5CalibrData.setText(SDot5CalibrDataTxt);
-                    SDot5CalibrComplit = true;
-                } else {
-                    SDot5CalibrComplit = false;
-                    SDot5CalibrData.clear();
-                    SButt5Calibr.setSelected(false);
-                }
             }
         } else {
+            SButt5Calibr.setSelected(false);
+            SDotAllCalibrComplit = false;
             SDot5CalibrComplit = false;
+            SDot5CalibrAnalog.clear();
             SDot5CalibrData.clear();
             //  метод очищающий калибровку
         }
@@ -460,6 +443,35 @@ public class Controller {
 
 //-----------------------------------------------------
 
+    // All
+
+    boolean SDotAllCalibrComplit = false;
+
+    @FXML
+    private TextField SDotAllCalibrData;
+    @FXML
+    private ToggleButton SButtAllCalibr;
+    @FXML
+    public void confirmCalibr()
+    {
+        if(SButtAllCalibr.isSelected()){
+
+          if(SDot5CalibrComplit && SDot4CalibrComplit && SDot3CalibrComplit && SDot2CalibrComplit && SDot1CalibrComplit)
+          {
+              //
+              SDotAllCalibrComplit = true;
+              SDotAllCalibrData.setText("Успешно");
+          } else {
+              SDotAllCalibrComplit = false;
+              SButtAllCalibr.setSelected(false);
+              SDotAllCalibrData.clear();
+          }
+        } else {
+            SDotAllCalibrComplit = false;
+            SButtAllCalibr.setSelected(false);
+            SDotAllCalibrData.clear();
+        }
+    }
 
 
 
